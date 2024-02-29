@@ -1,2 +1,6 @@
-.devenv
-.direnv
+# devenv directories
+.devenv/
+.direnv/
+
+# Python
+__pycache__/
