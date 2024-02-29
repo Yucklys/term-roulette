@@ -1,2 +1,4 @@
 textual
 textual-dev
+python-lsp-server[all]
+

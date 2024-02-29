@@ -1,8 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default";
     devenv.url = "github:cachix/devenv";
+    nixpkgs-python.url = "github:cachix/nixpkgs-python";
   };
 
   nixConfig = {
@@ -29,8 +30,14 @@
               inherit inputs pkgs;
               modules = [
                 {
+                  packages = with pkgs; [
+                    pkg-config
+                    stdenv.cc.cc.lib
+                  ];
+                  
                   languages.python = {
                     enable = true;
+                    version = "3.11";
 
                     venv.enable = true;
                     venv.requirements = ./requirements.txt;
