@@ -5,5 +5,5 @@ from .ui import RouletteGame
 
 def run_game():
     """Run the game in current shell."""
-    app = RouletteGame()
+    app = RouletteGame(6, 3)
     app.run()

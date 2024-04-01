@@ -1,0 +1,33 @@
+PlayerBoard {
+		layout: vertical;
+		background: $boost;
+		height: 1fr;
+		margin: 1;
+		min-width: 50;
+		padding: 1;
+		border: tall $background;
+}
+
+#agent_board {
+		border: tall crimson;
+}
+
+#player_board {
+		border: tall greenyellow;
+}
+
+#chamber {
+		content-align: center middle;
+		text-style: underline;
+		color: $secondary;
+}
+
+Botton {
+		width: 16;
+}
+
+#shoot {
+		dock: left;
+		height: 100%;
+		align: left middle;
+}
