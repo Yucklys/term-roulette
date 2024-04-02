@@ -3,22 +3,27 @@
 from textual.app import App, ComposeResult, RenderResult
 from textual.widgets import Footer, Header, Static, Button
 from textual.reactive import reactive
+from textual import on
+from .picker import CharacterPicker
 import random
 
 
 class PlayerBoard(Static):
     """A widget to display the player's board."""
 
-    def __init__(self, player_name, **kwargs):
+    player_name = reactive("")
+
+    def __init__(self, player_name="", **kwargs):
         """Initialize the player's board."""
         super().__init__(**kwargs)
         self.player_name = player_name
+        self.update_border_title()
 
     def compose(self) -> ComposeResult:
         """Create the player's board."""
         yield Button("Shoot!", id="shoot", variant="error")
 
-    def on_mount(self) -> None:
+    def update_border_title(self):
         """Set the title of the board."""
         self.border_title = self.player_name + "'s board"
 
@@ -56,11 +61,21 @@ class RouletteGame(App):
     def on_mount(self) -> None:
         """Update widgets on mount."""
         self.reload()
+        # watch the character picker to update the opponent
+
+        def update_agent_name(selected: str):
+            agent_board = self.query_one("#agent_board")
+            agent_board.player_name = selected
+            agent_board.update_border_title()
+
+        picker = self.query_one(CharacterPicker)
+        self.watch(picker, "selected", update_agent_name)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
         yield Footer()
+        yield CharacterPicker()
         yield PlayerBoard("Sam", id="agent_board")
         yield Chamber(id="chamber")
         yield PlayerBoard("Player", id="player_board")
@@ -69,13 +84,11 @@ class RouletteGame(App):
         """Toggle dark mode."""
         self.dark = not self.dark
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    @on(Button.Pressed, "#shoot")
+    def handle_shoot_button(self):
         """Handle button press events."""
-        button_id = event.button.id
-
-        if button_id == "shoot":
-            print("shoot pressed")
-            self.shoot()
+        print("shoot pressed")
+        self.shoot()
 
     def shoot(self) -> None:
         """Pull the trigger."""
