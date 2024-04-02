@@ -38,7 +38,7 @@ class Chamber(Static):
                 chamber_str += "⁍" if self.chambers[i] else "⦾"
             else:
                 chamber_str += "•"
-        return ' '.join(chamber_str)
+        return " ".join(chamber_str)
 
 
 class RouletteGame(App):
