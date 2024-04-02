@@ -21,7 +21,8 @@ class PlayerBoard(Static):
 
     def compose(self) -> ComposeResult:
         """Create the player's board."""
-        yield Button("Shoot!", id="shoot", variant="error")
+        yield Button("Shoot opponent", id="shoot_opponent", variant="error")
+        yield Button("Shoot myself", id="shoot_myself", variant="warning")
 
     def update_border_title(self):
         """Set the title of the board."""
@@ -84,10 +85,16 @@ class RouletteGame(App):
         """Toggle dark mode."""
         self.dark = not self.dark
 
-    @on(Button.Pressed, "#shoot")
-    def handle_shoot_button(self):
-        """Handle button press events."""
-        print("shoot pressed")
+    @on(Button.Pressed, "#shoot_opponent")
+    def handle_shoot_opponent(self):
+        """Handle shoot opponent."""
+        print("shoot opponent")
+        self.shoot()
+
+    @on(Button.Pressed, "#shoot_myself")
+    def handle_shoot_myself(self):
+        """Handle shoot myself."""
+        print("shoot myself")
         self.shoot()
 
     def shoot(self) -> None:

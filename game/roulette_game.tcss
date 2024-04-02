@@ -26,10 +26,15 @@ Botton {
 		width: 16;
 }
 
-#shoot {
+#shoot_opponent {
 		dock: left;
 		height: 100%;
 		align: left middle;
+}
+
+#shoot_myself {
+		dock: right;
+		height: 100%;
 }
 
 ListView {
