@@ -5,7 +5,7 @@ from textual.widgets import Footer, Header, Static, Button
 from textual.reactive import reactive
 from textual import on
 from .picker import CharacterPicker
-import random
+from GunMechanics import Gun, GunType
 
 
 class PlayerBoard(Static):
@@ -32,20 +32,36 @@ class PlayerBoard(Static):
 class Chamber(Static):
     """A widget to display the chamber."""
 
-    chambers = reactive("")
-    barrel = reactive(0)
+    shot_bullet = reactive(-1)
+
+    def __init__(self, gun_type, **kwargs):
+        """Initialize the chamber."""
+        super().__init__(**kwargs)
+        gun = Gun(gun_type)
+        gun.reload()
+        self.gun = gun
 
     def render(self) -> RenderResult:
         """Render the chamber."""
         # Create textual representation of chambers
-        chamber_str = []
-        for i in range(len(self.chambers)):
-            if i < self.barrel:
-                chamber_str += "⁍" if self.chambers[i] else "⦾"
-            else:
-                chamber_str += "•"
-        return " ".join(chamber_str)
+        chamber = self.gun.chamber
+        chamber_str = ["•" for _ in range(len(chamber))]
+        shot_bullet_desc = ""
+        match self.shot_bullet:
+            case 1:
+                shot_bullet_desc = "L"
+            case 2:
+                shot_bullet_desc = "B"
+            case 3 | 4:
+                shot_bullet_desc = "P"
 
+        return shot_bullet_desc + " " + " ".join(chamber_str)
+
+    def reload(self) -> None:
+        """Reload the revolver."""
+        self.gun.reload()
+        self.shot_bullet = -1
+        self.update()
 
 class RouletteGame(App):
     """A smart Russian Roulette Simulator."""
@@ -53,15 +69,13 @@ class RouletteGame(App):
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
     CSS_PATH = "roulette_game.tcss"
 
-    def __init__(self, total_n, bullet_n, **kwargs):
+    def __init__(self, gun_type, **kwargs):
         """Initialize the game."""
         super().__init__(**kwargs)
-        self.total_n = total_n
-        self.bullet_n = bullet_n
+        self.chamber = Chamber(gun_type, id="chamber")
 
     def on_mount(self) -> None:
         """Update widgets on mount."""
-        self.reload()
         # watch the character picker to update the opponent
 
         def update_agent_name(selected: str):
@@ -78,7 +92,7 @@ class RouletteGame(App):
         yield Footer()
         yield CharacterPicker()
         yield PlayerBoard("Sam", id="agent_board")
-        yield Chamber(id="chamber")
+        yield self.chamber
         yield PlayerBoard("Player", id="player_board")
 
     def action_toggle_dark(self) -> None:
@@ -100,26 +114,20 @@ class RouletteGame(App):
     def shoot(self) -> None:
         """Pull the trigger."""
         chamber_node = self.query_one(Chamber)
-        chamber_node.barrel += 1
+        gun = chamber_node.gun
 
         # reload the revolver when go through all chambers
-        print(self.total_n, chamber_node.barrel)
-        if chamber_node.barrel == self.total_n + 1:
-            self.reload()
-        # TODO: Add more checks to see if the chamber is loaded
+        if len(gun.chamber) == 0:
+            chamber_node.reload()
+        else:
+            shot_bullet = gun.shoot()
+            chamber_node.shot_bullet = shot_bullet
+            print("Shot bullet: ", shot_bullet)
 
-    def reload(self) -> None:
-        """Reload the revolver."""
-        chamber_node = self.query_one("#chamber")
-        chambers = [False] * self.total_n
-        loaded_chambers = random.sample(range(self.total_n), self.bullet_n)
-        for i in loaded_chambers:
-            chambers[i] = True
-
-        chamber_node.chambers = chambers
-        chamber_node.barrel = 0
+        chamber_node.update()
+        print(f"Remaining chambers: {len(gun.chamber)}")
 
 
 if __name__ == "__main__":
-    app = RouletteGame(6, 1)
+    app = RouletteGame(GunType.REVOLVER)
     app.run()
