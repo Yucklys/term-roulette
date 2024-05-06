@@ -38,7 +38,7 @@ Botton {
 		align: left middle;
 }
 
-#shoot_myself {
+#shoot_self {
 		dock: right;
 		height: 100%;
 }

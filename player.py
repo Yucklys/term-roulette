@@ -1,5 +1,16 @@
 from enum import Enum
 
+class PlayerType(Enum):
+    PLAYER = 1
+    AGENT = 2
+
+    def opp(self):
+        """Return the opponent of the player type."""
+        if self == PlayerType.PLAYER:
+            return PlayerType.AGENT
+        else:
+            return PlayerType.PLAYER
+
 class validMoves(Enum):
     SHOOT_OPPONENT = 0
     SHOOT_SELF = 1
@@ -42,11 +53,8 @@ class Player():
             self.player_moves.append(validMoves.USE_HEAL)
             damage_to_opponent -= 1
 
-    def update_health(self, damage_recieved):
-        if damage_recieved < 0 :
-            self.health += 1
-        else :
-            self.health -= damage_recieved
+    def update_health(self, amount):
+        self.health += amount
     
 
 

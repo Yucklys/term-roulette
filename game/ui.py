@@ -3,9 +3,11 @@
 from textual.app import App, ComposeResult, RenderResult
 from textual.widgets import Footer, Header, Static, Button, ListView
 from textual.reactive import reactive
+from textual.containers import Vertical, Horizontal
 from textual import on
 from .picker import CharacterPicker, GunPicker
 from GunMechanics import Gun, GunType
+from player import Player, PlayerType
 from enum import Enum
 
 
@@ -22,17 +24,28 @@ class PlayerBoard(Static):
     """A widget to display the player's board."""
 
     player_name = reactive("")
+    hp = reactive(5, recompose=True)
 
     def __init__(self, player_name="", **kwargs):
         """Initialize the player's board."""
         super().__init__(**kwargs)
         self.player_name = player_name
+        match self.id:
+            case "agent_board":
+                self.player_type = PlayerType.AGENT
+            case "player_board":
+                self.player_type = PlayerType.PLAYER
+        self.max_hp = 5
+        self.player = Player(self.max_hp, [])
         self.update_border_title()
 
     def compose(self) -> ComposeResult:
         """Create the player's board."""
-        yield Button("Shoot opponent", id="shoot_opponent", variant="error")
-        yield Button("Shoot myself", id="shoot_myself", variant="warning")
+        with Vertical():
+            yield Static(f"Health: {self.hp}/{self.max_hp}")
+            with Horizontal():
+                yield Button("Shoot opponent", id="shoot_opponent", variant="error")
+                yield Button("Shoot myself", id="shoot_self", variant="warning")
 
     def update_border_title(self):
         """Set the title of the board."""
@@ -46,11 +59,24 @@ class PlayerBoard(Static):
         self.player_name = player_name
         self.update_border_title()
 
+    def handle_on_hit(self, bullet_type):
+        """Respond to the shoot event."""
+        if bullet_type == 1:
+            self.hp -= 1
+        elif bullet_type == 2:
+            pass
+        elif bullet_type == 3:
+            self.hp -= 2
+        elif bullet_type == 4:
+            self.hp += 1
+        print(self.hp)
+
 
 class Chamber(Static):
     shot_bullet = reactive(0)
-    
+
     """A widget to display the chamber."""
+
     def __init__(self, gun_type, **kwargs):
         """Initialize the chamber."""
         super().__init__(**kwargs)
@@ -67,8 +93,10 @@ class Chamber(Static):
                 shot_bullet_desc = "L"
             case 2:
                 shot_bullet_desc = "B"
-            case 3 | 4:
-                shot_bullet_desc = "P"
+            case 3:
+                shot_bullet_desc = "D"
+            case 4:
+                shot_bullet_desc = "H"
 
         return shot_bullet_desc + " " + " ".join(chamber_str)
 
@@ -119,14 +147,27 @@ class RouletteGame(App):
     @on(Button.Pressed, "#shoot_opponent")
     def handle_shoot_opponent(self):
         """Handle shoot opponent."""
-        print("shoot opponent")
-        self.shoot()
+        # get board type by game state
+        match self.game_state:
+            case GameState.PLAYER_TURN:
+                self_type = PlayerType.PLAYER
+            case GameState.AGENT_TURN:
+                self_type = PlayerType.AGENT
+        opp_type = self_type.opp()
+        print(f"{self_type} choose to shoot opponent")
+        self.shoot(opp_type)
 
-    @on(Button.Pressed, "#shoot_myself")
-    def handle_shoot_myself(self):
+    @on(Button.Pressed, "#shoot_self")
+    def handle_shoot_self(self):
         """Handle shoot myself."""
-        print("shoot myself")
-        self.shoot()
+        # get board type by game state
+        match self.game_state:
+            case GameState.PLAYER_TURN:
+                self_type = PlayerType.PLAYER
+            case GameState.AGENT_TURN:
+                self_type = PlayerType.AGENT
+        print(f"{self_type} choose to shoot self")
+        self.shoot(self_type)
 
     @on(ListView.Selected)
     def handle_list_view_selected(self, selected: ListView.Selected):
@@ -159,7 +200,7 @@ class RouletteGame(App):
         agent_board.remove_class("hidden")
         chamber.remove_class("hidden")
 
-    def shoot(self) -> None:
+    def shoot(self, target: PlayerType):
         """Pull the trigger."""
         chamber_node = self.query_one(Chamber)
         gun = chamber_node.gun
@@ -170,10 +211,27 @@ class RouletteGame(App):
         else:
             shot_bullet = gun.shoot()
             chamber_node.shot_bullet = shot_bullet
+            self.get_player_board(target).handle_on_hit(shot_bullet)
             print("Shot bullet: ", shot_bullet)
 
         chamber_node.update()
         print(f"Remaining chambers: {len(gun.chamber)}")
+
+    def get_player_board(self, player_type):
+        """Get the player board with given player type."""
+        return (
+            self.query_one("#agent_board")
+            if player_type == PlayerType.AGENT
+            else self.query_one("#player_board")
+        )
+
+    def get_player_type(self):
+        """Get the player type by matching game state."""
+        return (
+            PlayerType.PLAYER
+            if self.game_state == GameState.PLAYER_TURN
+            else PlayerType.AGENT
+        )
 
 
 if __name__ == "__main__":
