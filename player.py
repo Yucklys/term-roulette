@@ -21,27 +21,45 @@ class Player():
     def __init__(self, health: int, player_moves: list):
         self.health = health
         self.player_moves = player_moves
+        
+    def calculate_reward(self, health, gun):
 
-    def decide_action(health, player_moves, game_state):
+        bullets_left, blank_count, dd_count, heal_count = gun.bullet_distribution()
+        positions_left = bullets_left + blank_count
+        double_bullet_found = True if dd_count == 0 else False
+        heal_chamber_found = True if heal_count == 0 else False
+
+        if double_bullet_found:
+            shoot_opponent = 10
+            shoot_self = -6
+        else:
+            shoot_opponent = 5
+            shoot_self = -3
+        
+        if heal_chamber_found:
+            shoot_blank_opponent = -3
+            shoot_blank_self = 5
+        else: 
+            shoot_blank_opponent = -1
+            shoot_blank_self = 3
+
+
+        bullet_probability = bullets_left/positions_left
+
+        expected_shoot_opponent = bullet_probability*shoot_opponent + (1-bullet_probability)*shoot_blank_opponent
+        expected_shoot_self = bullet_probability*shoot_self + (1-bullet_probability)*shoot_blank_self
+
+        return  expected_shoot_self, expected_shoot_opponent
+    
+    def decide_action(self, health, player_moves, gun):
+
     # Hypothetical reward calculation using provided game state
-    reward_shoot_self = calculate_reward_shoot_self(health, player_moves, game_state)
-    reward_shoot_opponent = calculate_reward_shoot_opponent(health, player_moves, game_state)
-    
-    if reward_shoot_self > reward_shoot_opponent:
-        return 'shoot_self'
-    else:
-        return 'shoot_opponent'
+        reward_shoot_self, reward_shoot_opponent = self.calculate_reward(health, player_moves, gun)
 
-    def calculate_reward_shoot_self(health, player_moves, game_state):
-        # Placeholder for calculating the reward for shooting oneself
-        # Modify this function to use real game state logic
-        return 10  # Example static value
-    
-    def calculate_reward_shoot_opponent(health, player_moves, game_state):
-        # Placeholder for calculating the reward for shooting the opponent
-        # Modify this function to use real game state logic
-        return 20  # Example static value
-
+        if reward_shoot_self > reward_shoot_opponent:
+            return 'shoot_self'
+        else:
+            return 'shoot_opponent'
     
     def action_Against_Self(self, action, bullet_shot):
         if action == validMoves.SHOOT_SELF and bullet_shot == 2:
