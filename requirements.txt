@@ -1,4 +1,5 @@
 textual == 0.58.1
 textual-dev
+textual-web
 python-lsp-server[all]
 python-lsp-ruff

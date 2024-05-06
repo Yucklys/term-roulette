@@ -1,0 +1,5 @@
+[account]
+api_key = "G5FATMF18Q16"
+
+[app.TermRoulette]
+command = "python main.py"

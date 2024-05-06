@@ -4,30 +4,39 @@ A simple game simulator of the Russian Roulette game, with more strategy and muc
 
 ## Rules
 
-### Revolver
-Each round the revolver is loaded with 3 bullets in 6 chambers. The player and the opponent then take action in turns. The player have three choices in their turn: **shoot the opponent**, **shoot himself**, or **use an item**.
+### Guns
+There are three types of guns available: revolver, handgun or shotgun. Each of them have different number of bullets and powerups loaded. You can view more details in the game. The following rules take revolver as an example.
+
+Each round the revolver is loaded with 3 bullets in 6 chambers. The player and the opponent then take action in turns. The player have two choices in their turn: **shoot the opponent** or **shoot himself**.
 
 - If the player choose to shoot.
-  - If the chamber is **loaded**, the guy who gets shot loss one Armor and the player turn ends.
+  - If the chamber is **loaded**, the guy who gets shot loss one HP and the player turn ends.
   - If the chamber is **not loaded** and the player **shoots himself**, the player gets a second turn.
   - If the chamber is **not loaded** and the player **shoots the opponent**, the player turn ends.
 
-### Items
-Items are distributed randomly at the start of each round. Each player receive 3 items, and they can use as many as they like in their turn. Items have different effects, like **increase the player Armor**, **double the next damage**, **skip the next chamber**, etc.
+### Powerups
+The powerups are special bullet in the chambers. The number of powerups are predefined for each gun type, but their locations in the chamber are random. They have special abilities compare with regular bullets, and player needs to use it wisely.
 
 ### Game over
-Each player have 5 Armor. Each will block one shoot for you. When a player have 0 Armor, he can no longer regain Armor, and he will loss if he gets one more shoot. The last player standing wins the game.
+Each player have 5 HP. When a player has 0 HP, the game end and that player losses.
 
 ## Usage
 Just run the `main.py` file to start the game. Press `D` to toggle between dark & light theme, and press `Ctrl-c` to exit the game.
-```{python}
+```{bash}
 python main.py
 ```
 
+You can also play the game on browser if your terminal has some limitation. First install `textual-web` by `pip install textual-web` and then run the command to serve the web app.
+```{bash}
+textual-web --config ganglion.toml
+```
+
+Then you shall see a URL printed after a while. Click the link or copy and open it in your browser will open the game.
+
+## Controls
+The game support both mouse and keyboard input. For mouse, just click on the buttons to interact.
+
+For keyboard, use **arrow keys** to move the focus between list, and use **TAB** to switch focus between buttons and list. Press **Enter** to confirm selection.
+
 ## TODO
-- [ ] Add items.
-- [ ] Add UI for Armors.
-- [ ] Add checks for game ends.
-- [ ] Add selector for AI or human opponent.
 - [ ] Implement AI for the opponent.
-- [ ] Add more game modes with different number of bullets, players, or items for each turn.
