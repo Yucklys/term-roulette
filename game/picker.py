@@ -49,6 +49,7 @@ class CharacterPicker(Static):
         picker = ListView(
             self.LabelItem("Mimic"),
             self.LabelItem("Berserker"),
+            id=self.id
         )
         yield picker
         yield Description(self.descriptions[picker.index], id="description")
@@ -56,14 +57,32 @@ class CharacterPicker(Static):
     @on(ListView.Highlighted)
     def handle_picker_switch(self, picker: ListView.Highlighted) -> None:
         """Update the character description."""
-        print(f"Label {picker.item}")
         description = self.query_one(Description)
         description.desc = self.descriptions[picker.list_view.index]
 
     @on(ListView.Selected)
     def handle_picker_select(self, picker: ListView.Selected) -> None:
-        """Select the opponent."""
+        """Select the opponent, double select highlighted item to confirm."""
         self.selected = picker.item.label
-        print(f"Select {self.selected} as opponent.")
         # Change the class of the picker to hide the picker UI
         self.add_class("hidden")
+
+
+class GunPicker(CharacterPicker):
+    descriptions = [
+        "6 bullets. 3 live bullet, 3 blanks.",
+        "10 bullets. 5 live bullet, 5 blanks.",
+        "2 bullets. 1 live bullet, 1 blank.",
+    ]
+    selected = reactive("")
+
+    def compose(self) -> ComposeResult:
+        """Create the character picker."""
+        picker = ListView(
+            self.LabelItem("Revolver"),
+            self.LabelItem("Handgun"),
+            self.LabelItem("Shotgun"),
+            id=self.id
+        )
+        yield picker
+        yield Description(self.descriptions[picker.index], id="description")

@@ -22,6 +22,12 @@ PlayerBoard {
 		color: $secondary;
 }
 
+#gun_picker,
+#character_picker {
+		align: center middle;
+		padding: 1;
+}
+
 Botton {
 		width: 16;
 }
@@ -38,7 +44,6 @@ Botton {
 }
 
 ListView {
-		align: center middle;
 		width: 30;
 		height: auto;
 		margin: 2 0 0 2;
@@ -50,6 +55,8 @@ Label {
 
 #description {
 		padding: 1 2;
+		height: auto;
+		width: 40;
 }
 
 .hidden {
