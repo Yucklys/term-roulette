@@ -51,7 +51,7 @@ class Player():
         return expected_shoot_self, expected_shoot_opponent
     
     def decide_action(self, health, player_moves, gun):
-        reward_shoot_self, reward_shoot_opponent = self.calculate_reward(health, player_moves, gun)
+        reward_shoot_self, reward_shoot_opponent = self.calculate_reward(health, gun)
 
         if reward_shoot_self > reward_shoot_opponent:
             return 'shoot_self'
@@ -92,7 +92,6 @@ class Player():
     def update_health(self, amount):
         self.health += amount
     
-
 
 
 class Ai():
