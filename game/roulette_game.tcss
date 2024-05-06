@@ -1,3 +1,7 @@
+Screen {
+		align: center middle;
+}
+
 PlayerBoard {
 		layout: vertical;
 		background: $boost;
@@ -26,6 +30,19 @@ PlayerBoard {
 #character_picker {
 		align: center middle;
 		padding: 1;
+}
+
+#game_over,
+#restart {
+		align: center middle;
+}
+
+#game_over {
+		margin: 0;
+}
+
+#restart {
+		margin-left: 3;
 }
 
 Botton {

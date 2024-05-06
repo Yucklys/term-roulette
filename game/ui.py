@@ -1,10 +1,10 @@
 """UI for the roulette game."""
 
 from textual.app import App, ComposeResult, RenderResult
-from textual.widgets import Footer, Header, Static, Button, ListView
+from textual.widgets import Footer, Header, Static, Button, ListView, Label
 from textual.reactive import reactive
 from textual.containers import Vertical, Horizontal
-from textual import on
+from textual import on, log
 from .picker import CharacterPicker, GunPicker
 from GunMechanics import Gun, GunType
 from player import Player, PlayerType
@@ -75,6 +75,11 @@ class PlayerBoard(Static):
 
         return hp_change
 
+    def reset(self):
+        """Reset the player's board."""
+        self.hp = self.max_hp
+        self.player = Player(self.max_hp, [])
+
 
 class Chamber(Static):
     shot_bullet = reactive(0)
@@ -113,8 +118,8 @@ class Chamber(Static):
         """Reload the revolver."""
         self.gun.reload()
         self.shot_bullet = -1
-        print("Chamber distribution: ", self.gun.bullet_distribution())
-        print("Chamber: ", self.gun.chamber)
+        log("Chamber distribution: ", self.gun.bullet_distribution())
+        log("Chamber: ", self.gun.chamber)
         self.update()
 
 
@@ -142,7 +147,8 @@ class RouletteGame(App):
         yield PlayerBoard("Agent", id="agent_board", classes="hidden")
         yield self.chamber
         yield PlayerBoard("Player", id="player_board", classes="hidden")
-        yield Static("Game Over!", id="game_over", classes="hidden")
+        yield Label("", id="game_over", classes="hidden")
+        yield Button("Restart", id="restart", classes="hidden")
 
     def action_toggle_dark(self) -> None:
         """Toggle dark mode."""
@@ -158,8 +164,8 @@ class RouletteGame(App):
             case GameState.AGENT_TURN:
                 self_type = PlayerType.AGENT
         opp_type = self_type.opp()
-        print(f"{self_type} choose to shoot opponent")
-        self.shoot(opp_type)
+        log(f"{self_type} choose to shoot opponent")
+        self.shoot(opp_type, self_type)
 
     @on(Button.Pressed, "#shoot_self")
     def handle_shoot_self(self):
@@ -170,8 +176,25 @@ class RouletteGame(App):
                 self_type = PlayerType.PLAYER
             case GameState.AGENT_TURN:
                 self_type = PlayerType.AGENT
-        print(f"{self_type} choose to shoot self")
-        self.shoot(self_type)
+        log(f"{self_type} choose to shoot self")
+        self.shoot(self_type, self_type)
+
+    @on(Button.Pressed, "#restart")
+    def handle_restart(self):
+        """Handle the restart button."""
+        self.game_state = GameState.GAME_START
+        self.opponent = None
+        self.option_selcted = 0
+        self.query_one("#game_over").add_class("hidden")
+        self.query_one("#restart").add_class("hidden")
+        pickers = self.query(CharacterPicker)
+        for picker in pickers:
+            picker.remove_class("hidden")
+        boards = self.query(PlayerBoard)
+        for board in boards:
+            board.reset()
+            board.add_class("hidden")
+        self.query_one(Chamber).add_class("hidden")
 
     @on(ListView.Selected)
     def handle_list_view_selected(self, selected: ListView.Selected):
@@ -180,12 +203,12 @@ class RouletteGame(App):
         match list_view.id:
             case "character_picker":
                 self.opponent = selected.item.label
-                print(f"Opponent: {self.opponent}")
+                log(f"Opponent: {self.opponent}")
                 self.query_one("#agent_board").player_name = self.opponent
                 self.option_selcted += 1
             case "gun_picker":
                 gun_type = selected.item.label.upper()
-                print(f"Gun type: {gun_type}")
+                log(f"Gun type: {gun_type}")
                 self.chamber.switch_gun(gun_type)
                 self.option_selcted += 1
 
@@ -194,7 +217,7 @@ class RouletteGame(App):
 
     def game_start(self) -> None:
         """Start the game and set the opponent."""
-        print("Game start")
+        self.log("Game start")
         agent_board = self.query_one("#agent_board")
         player_board = self.query_one("#player_board")
         chamber = self.query_one(Chamber)
@@ -222,10 +245,35 @@ class RouletteGame(App):
                 self.query_one("#agent_board").disabled = False
                 self.query_one("#player_board").disabled = True
 
-    def shoot(self, target: PlayerType):
+    def game_over(self, losser: PlayerType):
+        """End the game."""
+        self.game_state = GameState.GAME_OVER
+        if losser == PlayerType.PLAYER:
+            result = "lost"
+        else:
+            result = "won"
+        result = f"Game over! You {result}!"
+        self.query_one("#game_over").update(result)
+        log(result)
+
+        # Hide the boards and chamber
+        agent_board = self.query_one("#agent_board")
+        player_board = self.query_one("#player_board")
+        chamber = self.query_one(Chamber)
+        agent_board.add_class("hidden")
+        player_board.add_class("hidden")
+        chamber.add_class("hidden")
+
+        # Show the game over message and restart button
+        self.query_one("#game_over").remove_class("hidden")
+        self.query_one("#restart").remove_class("hidden")
+
+
+    def shoot(self, target: PlayerType, self_type: PlayerType):
         """Pull the trigger."""
         chamber_node = self.query_one(Chamber)
         gun = chamber_node.gun
+        log(f"Current turn: {self.game_state}")
 
         # reload the revolver when go through all chambers
         if len(gun.chamber) == 0:
@@ -234,16 +282,23 @@ class RouletteGame(App):
             shot_bullet = gun.shoot()
             chamber_node.shot_bullet = shot_bullet
             board = self.get_player_board(target)
-            self_type = board.player_type
-            hp_change = self.get_player_board(target).handle_on_hit(shot_bullet)
+            # reverse self_type if the target is shooting himself
+            hp_change = board.handle_on_hit(shot_bullet)
             # switch turn if the player is not shooting himself with a blank bullet
+            log(hp_change=hp_change, target=target, self_type=self_type)
             if hp_change != 0 or target != self_type:
+                print("switching turn")
                 self.game_switch_turn()
 
-            print("Shot bullet: ", shot_bullet)
+            log("Shot bullet: ", shot_bullet)
 
         chamber_node.update()
-        print(f"Remaining chambers: {len(gun.chamber)}")
+        log(f"Remaining chambers: {len(gun.chamber)}")
+
+        # Check if the game is over
+        board = self.get_player_board(target)
+        if board.hp <= 0:
+            self.game_over(target)
 
     def get_player_board(self, player_type):
         """Get the player board with given player type."""
