@@ -1,4 +1,4 @@
-from enum import *
+from enum import Enum
 
 class validMoves(Enum):
     SHOOT_OPPONENT = 0
