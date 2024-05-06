@@ -60,16 +60,20 @@ class PlayerBoard(Static):
         self.update_border_title()
 
     def handle_on_hit(self, bullet_type):
-        """Respond to the shoot event."""
+        """Respond to the shoot event. Return the damage taken from this shot."""
+        hp_change = 0
         if bullet_type == 1:
-            self.hp -= 1
+            hp_change = -1
         elif bullet_type == 2:
             pass
         elif bullet_type == 3:
-            self.hp -= 2
+            hp_change = -2
         elif bullet_type == 4:
-            self.hp += 1
-        print(self.hp)
+            hp_change = 1
+
+        self.hp += hp_change
+
+        return hp_change
 
 
 class Chamber(Static):
@@ -191,7 +195,6 @@ class RouletteGame(App):
     def game_start(self) -> None:
         """Start the game and set the opponent."""
         print("Game start")
-        self.game_state = GameState.PLAYER_TURN
         agent_board = self.query_one("#agent_board")
         player_board = self.query_one("#player_board")
         chamber = self.query_one(Chamber)
@@ -199,6 +202,25 @@ class RouletteGame(App):
         player_board.remove_class("hidden")
         agent_board.remove_class("hidden")
         chamber.remove_class("hidden")
+
+        # Switch to player's turn
+        self.game_switch_turn()
+
+    def game_switch_turn(self):
+        """Switch the game turn."""
+        self.game_state = (
+            GameState.AGENT_TURN
+            if self.game_state == GameState.PLAYER_TURN
+            else GameState.PLAYER_TURN
+        )
+        # Disable the player's board when it's not his turn
+        match self.game_state:
+            case GameState.PLAYER_TURN:
+                self.query_one("#player_board").disabled = False
+                self.query_one("#agent_board").disabled = True
+            case GameState.AGENT_TURN:
+                self.query_one("#agent_board").disabled = False
+                self.query_one("#player_board").disabled = True
 
     def shoot(self, target: PlayerType):
         """Pull the trigger."""
@@ -211,7 +233,13 @@ class RouletteGame(App):
         else:
             shot_bullet = gun.shoot()
             chamber_node.shot_bullet = shot_bullet
-            self.get_player_board(target).handle_on_hit(shot_bullet)
+            board = self.get_player_board(target)
+            self_type = board.player_type
+            hp_change = self.get_player_board(target).handle_on_hit(shot_bullet)
+            # switch turn if the player is not shooting himself with a blank bullet
+            if hp_change != 0 or target != self_type:
+                self.game_switch_turn()
+
             print("Shot bullet: ", shot_bullet)
 
         chamber_node.update()
