@@ -10,7 +10,7 @@ class PowerUps(Enum):
 class GunType(Enum):
     REVOLVER = "Revolver"
     HANDGUN = "Handgun"
-    SHOTGUN = "Shoutgun"
+    SHOTGUN = "Shotgun"
 
 
 class AmmoType(Enum):
@@ -31,7 +31,7 @@ class Gun:
             self.chamber = [None] * 10
 
         elif type == GunType.SHOTGUN:
-            self.weapon_name = GunType.SHOTGUN
+            self.weapon_name = GunType.SHOTGUN.value
             self.mag_size = 2
             self.chamber = [None] * 2
 
