@@ -50,17 +50,20 @@ class Gun:
                 self.chamber[i] = rand_power_up_or_blank
 
     def bullet_distribution(self):
-        blank_count = live_count = powerUp_count = 0
+        blank_count = live_count = heal_count = dd_count = 0
 
         for i in range(len(self.chamber)):
-            if self.chamber[i] == 1:
-                live_count += 1
-            elif self.chamber[i] == 2:
-                blank_count += 1
-            else:
-                powerUp_count += 1
+            match self.chamber[i]:
+                case 1:
+                    live_count += 1
+                case 2:
+                    blank_count += 1
+                case 3:
+                    dd_count += 1
+                case 4:
+                    heal_count += 1
 
-        return blank_count, live_count, powerUp_count
+        return live_count, blank_count, dd_count, heal_count
 
     def get_current_bullet(self):
         val = self.chamber[0]

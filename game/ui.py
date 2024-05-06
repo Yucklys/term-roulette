@@ -75,12 +75,14 @@ class Chamber(Static):
     def switch_gun(self, gun_type: str) -> None:
         """Switch the gun type."""
         self.gun = Gun(GunType[gun_type])
-        self.gun.reload()
+        self.reload()
 
     def reload(self) -> None:
         """Reload the revolver."""
         self.gun.reload()
         self.shot_bullet = -1
+        print("Chamber distribution: ", self.gun.bullet_distribution())
+        print("Chamber: ", self.gun.chamber)
         self.update()
 
 
