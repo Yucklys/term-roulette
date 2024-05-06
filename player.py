@@ -21,6 +21,27 @@ class Player():
     def __init__(self, health: int, player_moves: list):
         self.health = health
         self.player_moves = player_moves
+
+    def decide_action(health, player_moves, game_state):
+    # Hypothetical reward calculation using provided game state
+    reward_shoot_self = calculate_reward_shoot_self(health, player_moves, game_state)
+    reward_shoot_opponent = calculate_reward_shoot_opponent(health, player_moves, game_state)
+    
+    if reward_shoot_self > reward_shoot_opponent:
+        return 'shoot_self'
+    else:
+        return 'shoot_opponent'
+
+    def calculate_reward_shoot_self(health, player_moves, game_state):
+        # Placeholder for calculating the reward for shooting oneself
+        # Modify this function to use real game state logic
+        return 10  # Example static value
+    
+    def calculate_reward_shoot_opponent(health, player_moves, game_state):
+        # Placeholder for calculating the reward for shooting the opponent
+        # Modify this function to use real game state logic
+        return 20  # Example static value
+
     
     def action_Against_Self(self, action, bullet_shot):
         if action == validMoves.SHOOT_SELF and bullet_shot == 2:
