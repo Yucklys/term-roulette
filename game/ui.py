@@ -7,7 +7,7 @@ from textual.containers import Vertical, Horizontal
 from textual import on, log
 from .picker import CharacterPicker, GunPicker
 from GunMechanics import Gun, GunType
-from player import Player, PlayerType
+from player import PlayerType, decide_action, calculate_reward
 from enum import Enum
 
 
@@ -36,7 +36,6 @@ class PlayerBoard(Static):
             case "player_board":
                 self.player_type = PlayerType.PLAYER
         self.max_hp = 5
-        self.player = Player(self.max_hp, [])
         self.update_border_title()
 
     def compose(self) -> ComposeResult:
@@ -82,7 +81,6 @@ class PlayerBoard(Static):
     def reset(self):
         """Reset the player's board."""
         self.hp = self.max_hp
-        self.player = Player(self.max_hp, [])
 
 
 class Chamber(Static):
@@ -90,10 +88,10 @@ class Chamber(Static):
 
     """A widget to display the chamber."""
 
-    def __init__(self, gun_type, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the chamber."""
         super().__init__(**kwargs)
-        self.switch_gun(gun_type)
+        self.gun = None
 
     def render(self) -> RenderResult:
         """Render the chamber."""
@@ -103,13 +101,13 @@ class Chamber(Static):
         shot_bullet_desc = ""
         match self.shot_bullet:
             case 1:
-                shot_bullet_desc = "L"
+                shot_bullet_desc = "Loaded"
             case 2:
-                shot_bullet_desc = "B"
+                shot_bullet_desc = "Blank"
             case 3:
-                shot_bullet_desc = "D"
+                shot_bullet_desc = "Double Damage"
             case 4:
-                shot_bullet_desc = "H"
+                shot_bullet_desc = "Heal"
 
         return shot_bullet_desc + " " + " ".join(chamber_str)
 
@@ -122,8 +120,15 @@ class Chamber(Static):
         """Reload the revolver."""
         self.gun.reload()
         self.shot_bullet = -1
-        log("Chamber distribution: ", self.gun.bullet_distribution())
+        bullet_distribution = self.gun.bullet_distribution()
+        live_count, blank_count, dd_count, heal_count = bullet_distribution
+        log("Chamber distribution: ", bullet_distribution)
         log("Chamber: ", self.gun.chamber)
+        self.notify(
+            f"L: {live_count} D: {dd_count} B: {blank_count} H: {heal_count}",
+            title="Gun reloaded!",
+            timeout=20,
+        )
         self.update()
 
 
@@ -138,7 +143,7 @@ class RouletteGame(App):
     def __init__(self, **kwargs):
         """Initialize the game."""
         super().__init__(**kwargs)
-        self.chamber = Chamber("HANDGUN", id="chamber", classes="hidden")
+        self.chamber = Chamber(id="chamber", classes="hidden")
         self.opponent = None
         self.option_selcted = 0
 
@@ -271,7 +276,6 @@ class RouletteGame(App):
         # Show the game over message and restart button
         self.query_one("#game_over").remove_class("hidden")
         self.query_one("#restart").remove_class("hidden")
-
 
     def shoot(self, target: PlayerType, self_type: PlayerType):
         """Pull the trigger."""

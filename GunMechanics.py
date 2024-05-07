@@ -1,4 +1,4 @@
-from enum import *
+from enum import Enum
 import random
 
 
@@ -45,7 +45,7 @@ class Gun:
             chamber_count += 1
 
         for i in range(self.mag_size):
-            if self.chamber[i] == None:
+            if self.chamber[i] is None:
                 rand_power_up_or_blank = random.randint(2, 4)
                 self.chamber[i] = rand_power_up_or_blank
 
