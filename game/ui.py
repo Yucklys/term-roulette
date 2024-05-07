@@ -71,6 +71,10 @@ class PlayerBoard(Static):
         elif bullet_type == 4:
             hp_change = 1
 
+        new_hp = self.hp + hp_change
+        # Check if the new hp exceeds the max hp
+        if new_hp > self.max_hp:
+            hp_change = 0
         self.hp += hp_change
 
         return hp_change
