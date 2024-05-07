@@ -1,4 +1,4 @@
-from enum import *
+from enum import Enum
 import random
 
 
@@ -35,7 +35,7 @@ class Gun:
             self.mag_size = 2
             self.chamber = [None] * 2
 
-    def reload(self):
+    def reload(self, distribution=None):
         self.chamber = [None] * self.mag_size
 
         chamber_count = 0
@@ -45,9 +45,12 @@ class Gun:
             chamber_count += 1
 
         for i in range(self.mag_size):
-            if self.chamber[i] == None:
+            if self.chamber[i] is None:
                 rand_power_up_or_blank = random.randint(2, 4)
                 self.chamber[i] = rand_power_up_or_blank
+
+        if distribution is not None:
+            self.chamber = distribution
 
     def bullet_distribution(self):
         blank_count = live_count = heal_count = dd_count = 0

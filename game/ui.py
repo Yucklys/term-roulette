@@ -4,11 +4,12 @@ from textual.app import App, ComposeResult, RenderResult
 from textual.widgets import Footer, Header, Static, Button, ListView, Label
 from textual.reactive import reactive
 from textual.containers import Vertical, Horizontal
-from textual import on, log
+from textual import on, log, work
 from .picker import CharacterPicker, GunPicker
 from GunMechanics import Gun, GunType
-from player import Player, PlayerType
+from player import *
 from enum import Enum
+import time
 
 
 class GameState(Enum):
@@ -36,7 +37,6 @@ class PlayerBoard(Static):
             case "player_board":
                 self.player_type = PlayerType.PLAYER
         self.max_hp = 5
-        self.player = Player(self.max_hp, [])
         self.update_border_title()
 
     def compose(self) -> ComposeResult:
@@ -82,7 +82,6 @@ class PlayerBoard(Static):
     def reset(self):
         """Reset the player's board."""
         self.hp = self.max_hp
-        self.player = Player(self.max_hp, [])
 
 
 class Chamber(Static):
@@ -90,10 +89,10 @@ class Chamber(Static):
 
     """A widget to display the chamber."""
 
-    def __init__(self, gun_type, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the chamber."""
         super().__init__(**kwargs)
-        self.switch_gun(gun_type)
+        self.gun = None
 
     def render(self) -> RenderResult:
         """Render the chamber."""
@@ -103,13 +102,13 @@ class Chamber(Static):
         shot_bullet_desc = ""
         match self.shot_bullet:
             case 1:
-                shot_bullet_desc = "L"
+                shot_bullet_desc = "Loaded"
             case 2:
-                shot_bullet_desc = "B"
+                shot_bullet_desc = "Blank"
             case 3:
-                shot_bullet_desc = "D"
+                shot_bullet_desc = "Double Damage"
             case 4:
-                shot_bullet_desc = "H"
+                shot_bullet_desc = "Heal"
 
         return shot_bullet_desc + " " + " ".join(chamber_str)
 
@@ -122,8 +121,16 @@ class Chamber(Static):
         """Reload the revolver."""
         self.gun.reload()
         self.shot_bullet = -1
-        log("Chamber distribution: ", self.gun.bullet_distribution())
+        bullet_distribution = self.gun.bullet_distribution()
+        live_count, blank_count, dd_count, heal_count = bullet_distribution
+        log("Chamber distribution: ", bullet_distribution)
         log("Chamber: ", self.gun.chamber)
+        # Notify the user about the chamber distribution
+        self.notify(
+            f"L: {live_count} D: {dd_count} B: {blank_count} H: {heal_count}",
+            title="Gun reloaded!",
+            timeout=30,
+        )
         self.update()
 
 
@@ -138,7 +145,7 @@ class RouletteGame(App):
     def __init__(self, **kwargs):
         """Initialize the game."""
         super().__init__(**kwargs)
-        self.chamber = Chamber("HANDGUN", id="chamber", classes="hidden")
+        self.chamber = Chamber(id="chamber", classes="hidden")
         self.opponent = None
         self.option_selcted = 0
 
@@ -206,9 +213,10 @@ class RouletteGame(App):
         list_view = selected.control
         match list_view.id:
             case "character_picker":
-                self.opponent = selected.item.label
+                opponent = selected.item.label
+                self.opponent = Agent(opponent)
                 log(f"Opponent: {self.opponent}")
-                self.query_one("#agent_board").player_name = self.opponent
+                self.query_one("#agent_board").player_name = opponent
                 self.option_selcted += 1
             case "gun_picker":
                 gun_type = selected.item.label.upper()
@@ -218,6 +226,43 @@ class RouletteGame(App):
 
         if self.option_selcted == 2:
             self.game_start()
+
+    def handle_agent_turn(self):
+        deceision = None
+        # match opponent AI type
+        match self.opponent:
+            case Agent.MIMIC:
+                # Let player decide for this agent
+                pass
+            case Agent.BERSERKER:
+                # Choose the best action for this agent
+                agent = self.query_one("#agent_board")
+                gun = self.query_one(Chamber).gun
+                health = agent.hp
+                decision = decide_action(health, gun)
+                log(f"Agent decision: {decision}")
+
+        # If the agent is making the decision, then proceed with the decision
+        if decision is not None:
+            self.handle_decision(decision)
+
+        if len(self.query_one(Chamber).gun.chamber) == 0:
+            self.query_one(Chamber).reload()
+
+    @work(thread=True)
+    def handle_decision(self, decision: Action):
+        """Handle the decision made by the agent."""
+        self_type = PlayerType.AGENT
+        target = PlayerType.PLAYER
+        # Wait for 3 seconds before shooting
+        # This is to give the player some time to see the last bullet
+        time.sleep(3)
+        # match the action
+        match decision:
+            case Action.SHOOT_SELF:
+                self.shoot(self_type, self_type)
+            case Action.SHOOT_OPPONENT:
+                self.shoot(target, self_type)
 
     def game_start(self) -> None:
         """Start the game and set the opponent."""
@@ -230,24 +275,38 @@ class RouletteGame(App):
         agent_board.remove_class("hidden")
         chamber.remove_class("hidden")
 
-        # Switch to player's turn
-        self.game_switch_turn()
+        # Disable the agent's board
+        agent_board.disabled = True
 
-    def game_switch_turn(self):
+        # Switch to player's turn
+        self.game_state = GameState.PLAYER_TURN
+
+    def game_switch_turn(self, continue_turn: bool):
         """Switch the game turn."""
-        self.game_state = (
+        # Do not switch turn if continue is True
+        new_game_state = (
             GameState.AGENT_TURN
             if self.game_state == GameState.PLAYER_TURN
             else GameState.PLAYER_TURN
         )
+        if continue_turn:
+            log("Continue turn")
+            new_game_state = self.game_state
+        else:
+            log("Switch turn")
+
         # Disable the player's board when it's not his turn
-        match self.game_state:
+        match new_game_state:
             case GameState.PLAYER_TURN:
                 self.query_one("#player_board").disabled = False
                 self.query_one("#agent_board").disabled = True
             case GameState.AGENT_TURN:
-                self.query_one("#agent_board").disabled = False
+                disable_agent_board = False if self.opponent == Agent.MIMIC else True
+                self.query_one("#agent_board").disabled = disable_agent_board
                 self.query_one("#player_board").disabled = True
+                self.handle_agent_turn()
+
+        self.game_state = new_game_state
 
     def game_over(self, losser: PlayerType):
         """End the game."""
@@ -272,7 +331,6 @@ class RouletteGame(App):
         self.query_one("#game_over").remove_class("hidden")
         self.query_one("#restart").remove_class("hidden")
 
-
     def shoot(self, target: PlayerType, self_type: PlayerType):
         """Pull the trigger."""
         chamber_node = self.query_one(Chamber)
@@ -288,16 +346,17 @@ class RouletteGame(App):
             board = self.get_player_board(target)
             # reverse self_type if the target is shooting himself
             hp_change = board.handle_on_hit(shot_bullet)
+            # continue the turn if the player is shooting himself with a blank bullet
+            continue_turn = True if hp_change == 0 and target == self_type else False
             # switch turn if the player is not shooting himself with a blank bullet
             log(hp_change=hp_change, target=target, self_type=self_type)
-            if hp_change != 0 or target != self_type:
-                print("switching turn")
-                self.game_switch_turn()
+
+            chamber_node.update()
+            self.game_switch_turn(continue_turn)
 
             log("Shot bullet: ", shot_bullet)
 
-        chamber_node.update()
-        log(f"Remaining chambers: {len(gun.chamber)}")
+        log(f"Current chambers: {gun.chamber}")
 
         # Check if the game is over
         board = self.get_player_board(target)
