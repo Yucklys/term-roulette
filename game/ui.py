@@ -228,7 +228,7 @@ class RouletteGame(App):
             self.game_start()
 
     def handle_agent_turn(self):
-        deceision = None
+        decision = None
         # match opponent AI type
         match self.opponent:
             case Agent.MIMIC:
