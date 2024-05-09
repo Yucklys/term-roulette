@@ -12,13 +12,16 @@ class PlayerType(Enum):
         else:
             return PlayerType.PLAYER
 
+
 class Agent(Enum):
     MIMIC = "Mimic"
     BERSERKER = "Berserker"
 
+
 class Action(Enum):
     SHOOT_SELF = "shoot_self"
     SHOOT_OPPONENT = "shoot_opponent"
+
 
 def calculate_reward(health, gun):
     bullets_left, blank_count, dd_count, heal_count = gun.bullet_distribution()
@@ -43,7 +46,7 @@ def calculate_reward(health, gun):
     # If there are no bullets left, return 0, 0 to avoid division by zero
     if positions_left == 0:
         return 0, 0
-    
+
     bullet_probability = bullets_left / positions_left
 
     expected_shoot_opponent = (
