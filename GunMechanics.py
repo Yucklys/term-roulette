@@ -37,6 +37,8 @@ class Gun:
 
     def reload(self, distribution=None):
         self.chamber = [None] * self.mag_size
+        powerUpCount = 0
+        healCount = 0
 
         chamber_count = 0
         while chamber_count != (self.mag_size / 2):
@@ -47,8 +49,15 @@ class Gun:
         for i in range(self.mag_size):
             if self.chamber[i] is None:
                 rand_power_up_or_blank = random.randint(2, 4)
-                self.chamber[i] = rand_power_up_or_blank
-
+                if rand_power_up_or_blank == 3 and powerUpCount != 1: 
+                    self.chamber[i] = rand_power_up_or_blank
+                    powerUpCount += 1
+                elif rand_power_up_or_blank == 4 and healCount != 1:
+                     self.chamber[i] = rand_power_up_or_blank
+                     healCount += 1
+                else :
+                     self.chamber[i] = 2
+                    
         if distribution is not None:
             self.chamber = distribution
 
