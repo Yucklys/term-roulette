@@ -37,6 +37,3 @@ Then you shall see a URL printed after a while. Click the link or copy and open 
 The game support both mouse and keyboard input. For mouse, just click on the buttons to interact.
 
 For keyboard, use **arrow keys** to move the focus between list, and use **TAB** to switch focus between buttons and list. Press **Enter** to confirm selection.
-
-## TODO
-- [ ] Implement AI for the opponent.

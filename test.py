@@ -1,5 +1,5 @@
 from GunMechanics import Gun, GunType
-from player import Agent, decide_action, calculate_reward, Action
+from player import Agent, decide_action, calculate_reward
 
 
 def test_against(gun, agent, num_games=1000, step=100, verbose=False):
@@ -129,7 +129,7 @@ def test(total_games, step, verbose):
     player_win_count = test_against(
         gun, Agent.BERSERKER, num_games=total_games, step=step, verbose=verbose
     )
-    print(f"Player win rate: {player_win_count / total_games:.2f}")
+    print(f"Player win rate: {player_win_count / total_games:.4f}")
 
 
 if __name__ == "__main__":
