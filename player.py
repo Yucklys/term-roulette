@@ -28,6 +28,7 @@ def calculate_reward(health, gun):
     positions_left = len(gun.chamber)
     double_bullet_found = True if dd_count != 0 else False
     heal_chamber_found = True if heal_count != 0 else False
+    damage_bullets_left = bullets_left + 1 if double_bullet_found else bullets_left
 
     if double_bullet_found:
         shoot_opponent = 10
@@ -47,7 +48,7 @@ def calculate_reward(health, gun):
     if positions_left == 0:
         return 0, 0
 
-    bullet_probability = bullets_left / positions_left
+    bullet_probability = damage_bullets_left / positions_left
 
     expected_shoot_opponent = (
         bullet_probability * shoot_opponent
