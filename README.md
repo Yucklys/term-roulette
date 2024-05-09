@@ -37,3 +37,6 @@ Then you shall see a URL printed after a while. Click the link or copy and open 
 The game support both mouse and keyboard input. For mouse, just click on the buttons to interact.
 
 For keyboard, use **arrow keys** to move the focus between list, and use **TAB** to switch focus between buttons and list. Press **Enter** to confirm selection.
+
+## Test
+You can run the test to see the performance of the agent by the winning rate in simulated AI v.s. AI games. The default agent used is Berserker, and tested to run on 10000 times. You can change the parameters in the `test.py` file to see the verbose of each game and add more runs. To see the result with default setting, run `python test.py`.
